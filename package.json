@@ -1,0 +1,14 @@
+{
+  "name": "room",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Kilari Teja",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/p5": "^1.4.2",
+    "parcel": "^2.6.2"
+  },
+  "dependencies": {
+    "p5": "^1.4.1"
+  }
+}
