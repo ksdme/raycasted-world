@@ -7,29 +7,122 @@ type Color = (
   | any
 )
 
+class Line {
+  constructor(
+    public a: number,
+    public b: number,
+    public c: number,
+  ) {}
+
+  intersects(line: Line): Vector | null {
+    const determinant = this.a * line.b - line.a * this.b
+
+    if (determinant === 0) {
+      return null
+    }
+    else {
+      return new Vector(
+        ((line.b * -this.c) - (this.b * -line.c)) / determinant,
+        ((this.a * -line.c) - (line.a * -this.c)) / determinant,
+      )
+    }
+  }
+
+  static fromPoints(from: Vector, to: Vector) {
+    const a = to.y - from.y
+    const b = from.x - to.x
+    const c = -((a * from.x) + (b * from.y))
+    return new Line(a, b, c)
+  }
+
+  static fromPointAngle(point: Vector, angle: number) {
+    return this.fromPoints(
+      new Vector(
+        point.x + 10 * Math.cos(angle),
+        point.y + 10 * Math.sin(angle),
+      ),
+      point,
+    )
+  }
+}
+
 class Wall {
+  public line!: Line
+
   constructor(
     public color: Color,
     public from: P5.Vector,
     public to: P5.Vector,
-  ) {}
-
-  intersect(vector: Vector): number {
-    return 1
+  ) {
+    this.line = Line.fromPoints(from, to)
   }
 }
 
 class Player {
   constructor(
     public fov = Math.PI / 6,
-    public angle = 0,
+    public angle = Math.PI,
     public position = new Vector(30, 50),
   ) {}
 }
 
+function makeRayCast(walls: Wall[], position: Vector, angle: number): RayCastHit {
+  const effectiveAngle = angle % (2 * Math.PI)
+
+  let closestWall: Wall | null = null
+  let closestDistance: number = Infinity
+
+  function selectIfCloser(wall: Wall, intersection: Vector) {
+    const distance = intersection.dist(position)
+
+    if (distance < closestDistance) {
+      closestWall = wall
+      closestDistance = distance
+    }
+  }
+
+  for (const wall of walls) {
+    const ray = Line.fromPointAngle(position, angle);
+    const intersection = wall.line.intersects(ray)
+
+    if (intersection) {
+      if (effectiveAngle >= 0 && effectiveAngle <= Math.PI / 2) {
+        if (intersection.x >= position.x && intersection.y >= position.y) {
+          selectIfCloser(wall, intersection)
+        }
+      }
+      else if (effectiveAngle > Math.PI / 2 && effectiveAngle <= Math.PI) {
+        if (intersection.x <= position.x && intersection.y >= position.y) {
+          selectIfCloser(wall, intersection)
+        }
+      }
+      else if (effectiveAngle > Math.PI && effectiveAngle <= 1.5 * Math.PI) {
+        if (intersection.x <= position.x && intersection.y <= position.y) {
+          selectIfCloser(wall, intersection)
+        }
+      }
+      else if (effectiveAngle > 1.5 * Math.PI && effectiveAngle <= 2 * Math.PI) {
+        if (intersection.x >= position.x && intersection.y <= position.y) {
+          selectIfCloser(wall, intersection)
+        }
+      }
+    }
+  }
+
+  return {
+    wall: closestWall,
+    distance: closestDistance,
+  }
+}
+
+interface RayCastHit {
+  wall: Wall | null
+  distance: number | null
+}
+
 new P5((p5: P5) => {
   const walls = [
-    new Wall("deeppink",   new Vector(0, 0), new Vector(100, 0)),
+    new Wall("white",   new Vector(0, 0), new Vector(100, 0)),
     new Wall("dodgerblue", new Vector(0, 0), new Vector(0, 100)),
     new Wall("khaki",      new Vector(100, 100), new Vector(100, 0)),
     new Wall("tomato",     new Vector(100, 100), new Vector(0, 100)),
@@ -77,23 +170,43 @@ new P5((p5: P5) => {
 
     // Input
     if (p5.keyIsDown(p5.RIGHT_ARROW)) {
-      player.angle += 0.1
-      console.log('RIGHT_ARROW', player.angle)
+      player.angle += 0.025
     }
     else if (p5.keyIsDown(p5.LEFT_ARROW)) {
-      player.angle -= 0.1
-      console.log('LEFT_ARROW', player.angle)
+      player.angle -= 0.025
     }
 
+    const step = p5.keyIsDown(p5.SHIFT)
+      ? 0.2
+      : 0.1
+
     if (p5.keyIsDown(p5.UP_ARROW)) {
-      const offset = Vector.fromAngle(player.angle, 0.2)
+      const offset = Vector.fromAngle(player.angle, step)
       player.position = Vector.add(player.position, offset)
     }
     else if (p5.keyIsDown(p5.DOWN_ARROW)) {
-      const offset = Vector.fromAngle(player.angle, -0.2)
+      const offset = Vector.fromAngle(player.angle, -step)
       player.position = Vector.add(player.position, offset)
     }
 
     // Render
+    const dA = player.fov / width
+    let column = 0
+    let angle = player.angle - player.fov / 2
+
+    while (column < width) {
+      const hit = makeRayCast(walls, player.position, angle)
+
+      if (hit.wall && hit.distance) {
+        const tall = (1 / Math.max(0.001, hit.distance)) * 7500
+        const padding = (height - tall) / 2
+
+        p5.stroke(hit.wall.color)
+        p5.line(column, padding, column, padding + tall)
+      }
+
+      column += 1
+      angle += dA
+    }
   }
 })
