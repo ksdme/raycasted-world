@@ -22,8 +22,8 @@ class Line {
     }
     else {
       return new Vector(
-        ((line.b * -this.c) - (this.b * -line.c)) / determinant,
-        ((this.a * -line.c) - (line.a * -this.c)) / determinant,
+        Math.fround(((line.b * -this.c) - (this.b * -line.c)) / determinant),
+        Math.fround(((this.a * -line.c) - (line.a * -this.c)) / determinant),
       )
     }
   }
@@ -86,24 +86,29 @@ function makeRayCast(walls: Wall[], position: Vector, angle: number): RayCastHit
     const intersection = wall.line.intersects(ray)
 
     if (intersection) {
-      if (effectiveAngle >= 0 && effectiveAngle <= Math.PI / 2) {
-        if (intersection.x >= position.x && intersection.y >= position.y) {
-          selectIfCloser(wall, intersection)
+      if (intersection.x >= Math.min(wall.from.x, wall.to.x)
+          && intersection.x <= Math.max(wall.from.x, wall.to.x)
+          && intersection.y >= Math.min(wall.from.y, wall.to.y)
+          && intersection.y <= Math.max(wall.from.y, wall.to.y)) {
+        if (effectiveAngle >= 0 && effectiveAngle <= Math.PI / 2) {
+          if (intersection.x >= position.x && intersection.y >= position.y) {
+            selectIfCloser(wall, intersection)
+          }
         }
-      }
-      else if (effectiveAngle > Math.PI / 2 && effectiveAngle <= Math.PI) {
-        if (intersection.x <= position.x && intersection.y >= position.y) {
-          selectIfCloser(wall, intersection)
+        else if (effectiveAngle > Math.PI / 2 && effectiveAngle <= Math.PI) {
+          if (intersection.x <= position.x && intersection.y >= position.y) {
+            selectIfCloser(wall, intersection)
+          }
         }
-      }
-      else if (effectiveAngle > Math.PI && effectiveAngle <= 1.5 * Math.PI) {
-        if (intersection.x <= position.x && intersection.y <= position.y) {
-          selectIfCloser(wall, intersection)
+        else if (effectiveAngle > Math.PI && effectiveAngle <= 1.5 * Math.PI) {
+          if (intersection.x <= position.x && intersection.y <= position.y) {
+            selectIfCloser(wall, intersection)
+          }
         }
-      }
-      else if (effectiveAngle > 1.5 * Math.PI && effectiveAngle <= 2 * Math.PI) {
-        if (intersection.x >= position.x && intersection.y <= position.y) {
-          selectIfCloser(wall, intersection)
+        else if (effectiveAngle > 1.5 * Math.PI && effectiveAngle <= 2 * Math.PI) {
+          if (intersection.x >= position.x && intersection.y <= position.y) {
+            selectIfCloser(wall, intersection)
+          }
         }
       }
     }
