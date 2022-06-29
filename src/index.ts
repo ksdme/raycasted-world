@@ -126,12 +126,19 @@ interface RayCastHit {
 }
 
 new P5((p5: P5) => {
+  const light = "blue"
+  const dark = "darkblue"
+
   const walls = [
-    new Wall("white",   new Vector(0, 0), new Vector(100, 0)),
-    new Wall("dodgerblue", new Vector(0, 0), new Vector(0, 100)),
-    new Wall("khaki",      new Vector(100, 100), new Vector(100, 0)),
-    new Wall("tomato",     new Vector(100, 100), new Vector(0, 100)),
-    new Wall("violet",     new Vector(0, 30), new Vector(30, 30)),
+    new Wall(light, new Vector(0, 0), new Vector(30, 0)),
+    new Wall(dark,  new Vector(30, 0), new Vector(30, 30)),
+    new Wall(light, new Vector(30, 30), new Vector(60, 30)),
+    new Wall(dark,  new Vector(60, 30), new Vector(60, 0)),
+    new Wall(light, new Vector(60, 0), new Vector(90, 0)),
+
+    new Wall(light, new Vector(0, 0), new Vector(0, 60)),
+    new Wall(light, new Vector(0, 60), new Vector(90, 60)),
+    new Wall(light, new Vector(90, 60), new Vector(90, 0)),
   ]
 
   // Screen
@@ -182,8 +189,8 @@ new P5((p5: P5) => {
     }
 
     const step = p5.keyIsDown(p5.SHIFT)
-      ? 0.2
-      : 0.1
+      ? 0.4
+      : 0.2
 
     if (p5.keyIsDown(p5.UP_ARROW)) {
       const offset = Vector.fromAngle(player.angle, step)
